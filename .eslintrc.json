@@ -1,0 +1,10 @@
+{
+    "extends": "airbnb-base",
+    "parserOptions": {
+        "sourceType": "script",
+        "ecmaVersion": 2018
+    },
+    "rules": {
+        "no-underscore-dangle": "off"
+    }
+}
