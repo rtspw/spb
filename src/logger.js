@@ -1,24 +1,25 @@
 'use strict';
 
+const LoggerFormatter = require('./logger-formatter');
+
 function __sanitizeOptions(options) {
-  let {
-    timezone = 'GMT',
+  const {
+    UTCOffset = 0,
+    formatOptions = {},
   } = options;
 
-  if (typeof timezone !== 'string' || timezone.length !== 3) {
-    throw new Error('Invalid timezone format');
-  }
-
-  timezone = timezone.toUpperCase();
-  return { timezone };
+  return {
+    UTCOffset,
+    formatOptions,
+  };
 }
-
 
 class Logger {
   constructor(options) {
     const sanitizedOptions = __sanitizeOptions(options);
     Object.assign(this, sanitizedOptions);
-    console.log(this);
+    this.formatter = new LoggerFormatter(this.formatOptions);
+    console.log(this.formatter.getFormattedDateWithOffset(this.UTCOffset));
   }
 }
 

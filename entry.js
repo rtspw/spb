@@ -3,11 +3,17 @@
 const Logger = require('./src/logger');
 
 try {
-  const t = new Logger({
-    timezone: 'pst',
-    watermelon: true,
+  const tasdf = new Logger({
+    UTCOffset: -480,
+    formatOptions: {
+      useAMPM: true,
+      useFullYear: true,
+      showDayOfWeek: false,
+      showMilliseconds: false,
+      showUTCOffset: true,
+      dateSeparator: '/',
+    },
   });
-  
 } catch(e) {
   console.log('Error:', e.message);
 }
