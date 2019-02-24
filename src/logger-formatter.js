@@ -18,6 +18,10 @@ function __sanitizeOptions(options) {
     throw new Error('Must specify whether to use 12hr AM/PM or 24hr format using a boolean');
   }
 
+  if (typeof useFullYear !== 'boolean') {
+    throw new Error('Must specify whether to use the full year format using a boolean');
+  }
+
   if (typeof showDayOfWeek !== 'boolean') {
     throw new Error('Must specify whether to show days of the week using a boolean');
   }
@@ -59,16 +63,18 @@ function __buildFormatString(formatOptions) {
   const day = 'DD';
   const dayOfWeek = formatOptions.showDayOfWeek ? 'ddd ' : '';
   const hour = formatOptions.useAMPM ? 'hh' : 'HH';
+  const min = 'mm';
+  const sec = 'ss';
   const ms = formatOptions.showMilliseconds ? `${tSep}SSS` : '';
   const AMPM = formatOptions.useAMPM ? 'A' : '';
   const offset = formatOptions.showUTCOffset ? ' [UTC]ZZ' : '';
-  const formatString = `${year}${dSep}${month}${dSep}${day} ${dayOfWeek}${hour}${tSep}mm${tSep}ss${ms}${AMPM}${offset}`;
+  const formatString = `${year}${dSep}${month}${dSep}${day} ${dayOfWeek}${hour}${tSep}${min}${tSep}${sec}${ms}${AMPM}${offset}`;
   return formatString;
 }
 
 
 class LoggerFormatter {
-  constructor(options) {
+  constructor(options = {}) {
     const sanitizedOptions = __sanitizeOptions(options);
     Object.assign(this, sanitizedOptions);
   }
