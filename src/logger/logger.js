@@ -10,6 +10,7 @@ function __sanitizeOptions(options) {
   const {
     willLogToFile = true,
     logDirName = 'log',
+    useANSIStyling = true,
     UTCOffset = 0,
     formatOptions = {},
   } = options;
@@ -20,6 +21,10 @@ function __sanitizeOptions(options) {
 
   if (typeof logDirName !== 'string' || logDirName.length <= 0) {
     throw new Error('Log Directory Name must be a string of at least one character');
+  }
+
+  if (typeof useANSIStyling !== 'boolean') {
+    throw new Error('Must specify whether to use ANSI styling for console output using a boolean');
   }
 
   if (typeof UTCOffset !== 'number') {
@@ -33,6 +38,7 @@ function __sanitizeOptions(options) {
   return {
     willLogToFile,
     logDirName,
+    useANSIStyling,
     UTCOffset,
     formatOptions,
   };
@@ -97,11 +103,12 @@ class Logger {
   }
 
   info(message) {
+    const typeStyle = this.useANSIStyling ? ['white', 'bgGreen'] : [];
+    const messageStyle = this.useANSIStyling ? ['green'] : [];
     const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'INFO', styles: ['white', 'bgGreen'],
+      text: 'INFO', styles: typeStyle,
     }, {
-      text: message,
-      styles: ['green'],
+      text: message, styles: messageStyle,
     });
     console.info(logConsoleMessage);
     if (this.willLogToFile) {
