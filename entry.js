@@ -1,6 +1,6 @@
 'use strict';
 
-const Logger = require('./src/logger');
+const Logger = require('./src/logger/logger');
 
 const loggerOptions = {
   willLogToFile: true,
@@ -8,7 +8,7 @@ const loggerOptions = {
   formatOptions: {
     useAMPM: true,
     useFullYear: true,
-    showDayOfWeek: false,
+    showDayOfWeek: true,
     showMilliseconds: false,
     showUTCOffset: false,
     dateSeparator: '/',
@@ -17,6 +17,11 @@ const loggerOptions = {
 
 try {
   const test = new Logger(loggerOptions);
-} catch(e) {
-  console.log('Error:', e.message);
+  test.info('More test info.');
+  test.warn('Option missing. Opting to use default.');
+  test.error('Something failed...');
+  test.kill();
+  test.info('Testing output to file after killing.');
+} catch (e) {
+  console.log('Error:', e.message, e.stack);
 }

@@ -73,13 +73,14 @@ function __buildFormatString(formatOptions) {
 }
 
 
-class LoggerFormatter {
-  constructor(options = {}) {
+class TimestampFormatter {
+  constructor(UTCOffset = 0, options = {}) {
+    this.UTCOffset = UTCOffset;
     const sanitizedOptions = __sanitizeOptions(options);
     Object.assign(this, sanitizedOptions);
   }
 
-  getFormattedDateWithOffset(offset) {
+  getTimestampWithOffset(offset = this.UTCOffset) {
     const UTCTime = dayjs.utc();
     const loggerTimeWithOffset = UTCTime.utcOffset(offset);
     const formatString = __buildFormatString(this.formatOptions);
@@ -88,4 +89,4 @@ class LoggerFormatter {
   }
 }
 
-module.exports = LoggerFormatter;
+module.exports = TimestampFormatter;
