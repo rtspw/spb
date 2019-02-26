@@ -6,6 +6,8 @@ const util = require('../util');
 const MessageBuilder = require('./message-builder');
 const TimestampFormatter = require('./timestamp-formatter');
 
+const __options = {};
+
 function __validateOptions(options) {
   const {
     willLogToFile = true,
@@ -44,13 +46,16 @@ function __validateOptions(options) {
   };
 }
 
+function __setPrivateOptions(options = {}) {
+  Object.assign(__options, options);
+}
+
 /**
- * @param {Logger} logger
  * @return {Promise} When the directory is created and ready to be used
  */
-function __setupLoggingDirectory(logger) {
+function __setupLoggingDirectory() {
   return new Promise((fulfill, reject) => {
-    const { logDirName: dirName } = logger;
+    const { logDirName: dirName } = __options;
     util.mkDirPromise(dirName)
       .then(() => {
         console.info('INIT:', `Created new '${dirName}' directory for logging output.`);
@@ -84,14 +89,14 @@ function __registerWriteStreamListeners(logger) {
  */
 function __setupLogToFile(logger) {
   return new Promise((fulfill, reject) => {
-    __setupLoggingDirectory(logger).then(() => {
-      logger.writeStream = fs.createWriteStream(`${logger.logDirName}/test.txt`, { flags: 'a' });
+    __setupLoggingDirectory().then(() => {
+      logger.writeStream = fs.createWriteStream(`${__options.logDirName}/test.txt`, { flags: 'a' });
       __registerWriteStreamListeners(logger);
       fulfill();
     }).catch((err) => {
       console.error('ERROR:', err.message);
       console.error('ERROR:', 'Disabling logging to file.');
-      logger.willLogToFile = false;
+      __options.willLogToFile = false;
       reject();
     });
   });
@@ -102,24 +107,24 @@ class Logger {
   constructor(options = {}) {
     console.info('INIT:', 'Setting up logger.');
     const validatedOptions = __validateOptions(options);
-    Object.assign(this, validatedOptions);
-    this.timestampFormatter = new TimestampFormatter(this.UTCOffset, this.formatOptions);
+    __setPrivateOptions(validatedOptions);
+    this.timestampFormatter = new TimestampFormatter(this.UTCOffset, __options.formatOptions);
     this.messageBuilder = new MessageBuilder(this.timestampFormatter);
-    if (this.willLogToFile) {
+    if (__options.willLogToFile) {
       this.settingUpLogToFile = __setupLogToFile(this);
     }
   }
 
   info(message) {
-    const typeStyle = this.useANSIStyling ? ['white', 'bgGreen'] : [];
-    const messageStyle = this.useANSIStyling ? ['green'] : [];
+    const typeStyles = __options.useANSIStyling ? ['white', 'bgGreen'] : [];
+    const messageStyles = __options.useANSIStyling ? ['green'] : [];
     const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'INFO', styles: typeStyle,
+      text: 'INFO', styles: typeStyles,
     }, {
-      text: message, styles: messageStyle,
+      text: message, styles: messageStyles,
     });
     console.info(logConsoleMessage);
-    if (this.willLogToFile) {
+    if (__options.willLogToFile) {
       const logFileMessage = this.messageBuilder.buildLogFileMessage('INFO', message);
       this.settingUpLogToFile.then(() => {
         this.writeStream.write(logFileMessage);
@@ -128,14 +133,16 @@ class Logger {
   }
 
   warn(message) {
+    const typeStyles = __options.useANSIStyling ? ['white', 'bgMagenta'] : [];
+    const messageStyles = __options.useANSIStyling ? ['magenta'] : [];
     const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'WARN', styles: ['white', 'bgMagenta'],
+      text: 'WARN', styles: typeStyles,
     }, {
       text: message,
-      styles: ['magenta'],
+      styles: messageStyles,
     });
     console.warn(logConsoleMessage);
-    if (this.willLogToFile) {
+    if (__options.willLogToFile) {
       const logFileMessage = this.messageBuilder.buildLogFileMessage('WARN', message);
       this.settingUpLogToFile.then(() => {
         this.writeStream.write(logFileMessage);
@@ -144,14 +151,16 @@ class Logger {
   }
 
   error(message) {
+    const typeStyles = __options.useANSIStyling ? ['white', 'bgRed'] : [];
+    const messageStyles = __options.useANSIStyling ? ['red'] : [];
     const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'ERROR', styles: ['white', 'bgRed'],
+      text: 'ERROR', styles: typeStyles,
     }, {
       text: message,
-      styles: ['red'],
+      styles: messageStyles,
     });
     console.error(logConsoleMessage);
-    if (this.willLogToFile) {
+    if (__options.willLogToFile) {
       const logFileMessage = this.messageBuilder.buildLogFileMessage('WARN', message);
       this.settingUpLogToFile.then(() => {
         this.writeStream.write(logFileMessage);
@@ -160,12 +169,12 @@ class Logger {
   }
 
   kill() {
-    if (this.willLogToFile) {
+    if (__options.willLogToFile) {
       this.settingUpLogToFile.then(() => {
         const finalMessage = this.messageBuilder.buildLogFileMessage('END', 'Killing logging to file process.');
         this.writeStream.end(finalMessage);
       });
-      this.willLogToFile = false;
+      __options.willLogToFile = false;
     }
   }
 }

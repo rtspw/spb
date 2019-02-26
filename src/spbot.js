@@ -28,6 +28,10 @@ function __registerEventListeners(spbot) {
     spbot.messageHandler.handle(message);
   });
 
+  spbot.eris.on('messageDelete', (message) => {
+    spbot.logger.error('A message was deleted!');
+  });
+
   spbot.eris.on('unknown', (packet, shardID) => {
     spbot.logger.warn(`Shard ${shardID} encountered an unknown packet.`);
   });
@@ -52,8 +56,8 @@ class SPBot {
       const validatedOptions = __validateOptions(options);
       Object.assign(this, validatedOptions);
       this.eris = new Eris(process.env.DISCORD_SPBOT_TOKEN);
-      this.messageHandler = new MessageHandler(this.eris);
       this.logger = new Logger(this.loggerOptions);
+      this.messageHandler = new MessageHandler(this.eris, this.logger);
     } catch (err) {
       console.error('Error:', 'Failed to initialize SPBot instance.');
       throw err;

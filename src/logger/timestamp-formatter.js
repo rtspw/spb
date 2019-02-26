@@ -3,6 +3,8 @@
 const dayjsPluginForUTC = require('dayjs-plugin-utc');
 const dayjs = require('dayjs').extend(dayjsPluginForUTC.default);
 
+const __formatOptions = {};
+
 function __validateOptions(options) {
   const {
     useAMPM = false,
@@ -43,33 +45,35 @@ function __validateOptions(options) {
   }
 
   return {
-    formatOptions: {
-      useAMPM,
-      useFullYear,
-      showDayOfWeek,
-      showMilliseconds,
-      showUTCOffset,
-      dateSeparator,
-      timeSeparator,
-    },
+    useAMPM,
+    useFullYear,
+    showDayOfWeek,
+    showMilliseconds,
+    showUTCOffset,
+    dateSeparator,
+    timeSeparator,
   };
 }
 
 
-function __buildFormatString(formatOptions) {
-  const { dateSeparator: dSep, timeSeparator: tSep } = formatOptions;
-  const year = formatOptions.useFullYear ? 'YYYY' : 'YY';
+function __buildFormatString() {
+  const { dateSeparator: dSep, timeSeparator: tSep } = __formatOptions;
+  const year = __formatOptions.useFullYear ? 'YYYY' : 'YY';
   const month = 'MM';
   const day = 'DD';
-  const dayOfWeek = formatOptions.showDayOfWeek ? 'ddd ' : '';
-  const hour = formatOptions.useAMPM ? 'hh' : 'HH';
+  const dayOfWeek = __formatOptions.showDayOfWeek ? 'ddd ' : '';
+  const hour = __formatOptions.useAMPM ? 'hh' : 'HH';
   const min = 'mm';
   const sec = 'ss';
-  const ms = formatOptions.showMilliseconds ? `${tSep}SSS` : '';
-  const AMPM = formatOptions.useAMPM ? 'A' : '';
-  const offset = formatOptions.showUTCOffset ? ' [UTC]ZZ' : '';
+  const ms = __formatOptions.showMilliseconds ? `${tSep}SSS` : '';
+  const AMPM = __formatOptions.useAMPM ? 'A' : '';
+  const offset = __formatOptions.showUTCOffset ? ' [UTC]ZZ' : '';
   const formatString = `${year}${dSep}${month}${dSep}${day} ${dayOfWeek}${hour}${tSep}${min}${tSep}${sec}${ms}${AMPM}${offset}`;
   return formatString;
+}
+
+function __setPrivateFormatOptions(options = {}) {
+  Object.assign(__formatOptions, options);
 }
 
 
@@ -77,13 +81,13 @@ class TimestampFormatter {
   constructor(UTCOffset = 0, options = {}) {
     this.UTCOffset = UTCOffset;
     const validatedOptions = __validateOptions(options);
-    Object.assign(this, validatedOptions);
+    __setPrivateFormatOptions(validatedOptions);
   }
 
   getTimestampWithOffset(offset = this.UTCOffset) {
     const UTCTime = dayjs.utc();
     const loggerTimeWithOffset = UTCTime.utcOffset(offset);
-    const formatString = __buildFormatString(this.formatOptions);
+    const formatString = __buildFormatString();
     const formattedDate = loggerTimeWithOffset.format(formatString);
     return formattedDate;
   }
