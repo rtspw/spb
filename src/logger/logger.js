@@ -6,7 +6,7 @@ const util = require('../util');
 const MessageBuilder = require('./message-builder');
 const TimestampFormatter = require('./timestamp-formatter');
 
-function __sanitizeOptions(options) {
+function __validateOptions(options) {
   const {
     willLogToFile = true,
     logDirName = 'log',
@@ -16,23 +16,23 @@ function __sanitizeOptions(options) {
   } = options;
 
   if (typeof willLogToFile !== 'boolean') {
-    throw new Error('Must specify whether to log to a file using a boolean');
+    throw new Error('Must specify whether to log to a file using a boolean.');
   }
 
   if (typeof logDirName !== 'string' || logDirName.length <= 0) {
-    throw new Error('Log Directory Name must be a string of at least one character');
+    throw new Error('Log Directory Name must be a string of at least one character.');
   }
 
   if (typeof useANSIStyling !== 'boolean') {
-    throw new Error('Must specify whether to use ANSI styling for console output using a boolean');
+    throw new Error('Must specify whether to use ANSI styling for console output using a boolean.');
   }
 
   if (typeof UTCOffset !== 'number') {
-    throw new Error('UTC Offset must be a number (in minutes)');
+    throw new Error('UTC Offset must be a number (in minutes).');
   }
 
   if (typeof formatOptions !== 'object') {
-    throw new Error('Formatting Options must be an object');
+    throw new Error('Formatting Options must be an object.');
   }
 
   return {
@@ -44,8 +44,11 @@ function __sanitizeOptions(options) {
   };
 }
 
-
-function __attachLoggerToDirectory(logger) {
+/**
+ * @param {Logger} logger
+ * @return {Promise} When the directory is created and ready to be used
+ */
+function __setupLoggingDirectory(logger) {
   return new Promise((fulfill, reject) => {
     const { logDirName: dirName } = logger;
     util.mkDirPromise(dirName)
@@ -75,10 +78,13 @@ function __registerWriteStreamListeners(logger) {
   });
 }
 
-
+/**
+ * @param {Logger} logger
+ * @return {Promise} Logging file and its write stream is created
+ */
 function __setupLogToFile(logger) {
   return new Promise((fulfill, reject) => {
-    __attachLoggerToDirectory(logger).then(() => {
+    __setupLoggingDirectory(logger).then(() => {
       logger.writeStream = fs.createWriteStream(`${logger.logDirName}/test.txt`, { flags: 'a' });
       __registerWriteStreamListeners(logger);
       fulfill();
@@ -91,10 +97,12 @@ function __setupLogToFile(logger) {
   });
 }
 
+
 class Logger {
   constructor(options = {}) {
-    const sanitizedOptions = __sanitizeOptions(options);
-    Object.assign(this, sanitizedOptions);
+    console.info('INIT:', 'Setting up logger.');
+    const validatedOptions = __validateOptions(options);
+    Object.assign(this, validatedOptions);
     this.timestampFormatter = new TimestampFormatter(this.UTCOffset, this.formatOptions);
     this.messageBuilder = new MessageBuilder(this.timestampFormatter);
     if (this.willLogToFile) {

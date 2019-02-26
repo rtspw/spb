@@ -3,7 +3,7 @@
 const dayjsPluginForUTC = require('dayjs-plugin-utc');
 const dayjs = require('dayjs').extend(dayjsPluginForUTC.default);
 
-function __sanitizeOptions(options) {
+function __validateOptions(options) {
   const {
     useAMPM = false,
     useFullYear = true,
@@ -15,31 +15,31 @@ function __sanitizeOptions(options) {
   } = options;
 
   if (typeof useAMPM !== 'boolean') {
-    throw new Error('Must specify whether to use 12hr AM/PM or 24hr format using a boolean');
+    throw new Error('Must specify whether to use 12hr AM/PM or 24hr format using a boolean.');
   }
 
   if (typeof useFullYear !== 'boolean') {
-    throw new Error('Must specify whether to use the full year format using a boolean');
+    throw new Error('Must specify whether to use the full year format using a boolean.');
   }
 
   if (typeof showDayOfWeek !== 'boolean') {
-    throw new Error('Must specify whether to show days of the week using a boolean');
+    throw new Error('Must specify whether to show days of the week using a boolean.');
   }
 
   if (typeof showMilliseconds !== 'boolean') {
-    throw new Error('Must specify whether to show milliseconds using a boolean');
+    throw new Error('Must specify whether to show milliseconds using a boolean.');
   }
 
   if (typeof showUTCOffset !== 'boolean') {
-    throw new Error('Must specify whether to show UTC offset using a boolean');
+    throw new Error('Must specify whether to show UTC offset using a boolean.');
   }
 
   if (typeof dateSeparator !== 'string' || dateSeparator.length === 0) {
-    throw new Error('Date Separator must be a string of at least one character');
+    throw new Error('Date Separator must be a string of at least one character.');
   }
 
   if (typeof timeSeparator !== 'string' || timeSeparator.length === 0) {
-    throw new Error('Time Separator must be a string of at least one character');
+    throw new Error('Time Separator must be a string of at least one character.');
   }
 
   return {
@@ -76,8 +76,8 @@ function __buildFormatString(formatOptions) {
 class TimestampFormatter {
   constructor(UTCOffset = 0, options = {}) {
     this.UTCOffset = UTCOffset;
-    const sanitizedOptions = __sanitizeOptions(options);
-    Object.assign(this, sanitizedOptions);
+    const validatedOptions = __validateOptions(options);
+    Object.assign(this, validatedOptions);
   }
 
   getTimestampWithOffset(offset = this.UTCOffset) {
