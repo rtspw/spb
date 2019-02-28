@@ -8,6 +8,8 @@
         "no-underscore-dangle": "off",
         "no-console": "off",
         "no-param-reassign": "warn",
-        "linebreak-style": "off"
+        "linebreak-style": "off",
+        "global-require": "off",
+        "import/no-dynamic-require": "off"
     }
 }

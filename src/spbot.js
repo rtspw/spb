@@ -7,14 +7,20 @@ const MessageHandler = require('./message-handler');
 function __validateOptions(options) {
   const {
     loggerOptions = {},
+    commandOptions = {},
   } = options;
 
   if (typeof loggerOptions !== 'object') {
     throw new Error('Logger Options must be an object.');
   }
 
+  if (typeof commandOptions !== 'object') {
+    throw new Error('Command Options must be an object.');
+  }
+
   return {
     loggerOptions,
+    commandOptions,
   };
 }
 
@@ -65,9 +71,9 @@ class SPBot {
       Object.assign(this, validatedOptions);
       this.eris = new Eris(botToken);
       this.logger = new Logger(this.loggerOptions);
-      this.messageHandler = new MessageHandler(this.eris, this.logger);
+      this.messageHandler = new MessageHandler(this.eris, this.logger, this.commandOptions);
     } catch (err) {
-      console.error('Error:', 'Failed to initialize SPBot instance.');
+      console.error('ERROR:', 'Failed to initialize SPBot instance.');
       throw err;
     }
   }

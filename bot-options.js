@@ -15,6 +15,13 @@ const loggerOptions = {
   },
 };
 
+const commandOptions = {
+  defaultPrefix: 's.',
+  adminIDs: [],
+  commandDirectory: 'commands',
+};
+
 module.exports = {
+  commandOptions,
   loggerOptions,
 };

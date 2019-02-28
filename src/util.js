@@ -14,11 +14,13 @@ function mkDirPromise(dirName) {
 function readDirPromise(dirName) {
   return new Promise((fulfill, reject) => {
     fs.readdir(dirName, (err, files) => {
-      
+      if (err) reject(err);
+      fulfill(files);
     });
   });
 }
 
 module.exports = {
   mkDirPromise,
+  readDirPromise,
 };

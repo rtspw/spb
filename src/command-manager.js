@@ -2,6 +2,7 @@
 
 const Eris = require('eris');
 const fs = require('fs');
+const { readDirPromise } = require('./util');
 
 const __options = {};
 
@@ -30,8 +31,19 @@ function __validateArguments(bot, options) {
   };
 }
 
-function __getCommandsFromDirectory() {
-  // fs.readdirSync(`${__dirname}/${__options.commandDirectory}`);
+async function __getCommandsFromDirectory() {
+  const commandDirectoryPath = `${__dirname}/${__options.commandDirectory}`;
+  try {
+    const files = await readDirPromise(commandDirectoryPath);
+    const commands = [];
+    files.forEach((file) => {
+      const command = require(`${commandDirectoryPath}/${file}`);
+      commands.push(command);
+    });
+    return commands;
+  } catch (err) {
+    throw err;
+  }
 }
 
 function setPrivateOptions(options) {
@@ -41,14 +53,21 @@ function setPrivateOptions(options) {
 
 class CommandManager {
   constructor(bot, options = {}) {
+    console.info('INIT:', 'Setting up command manager.');
     const validatedArguments = __validateArguments(bot, options);
     Object.assign(this, validatedArguments.bot);
     setPrivateOptions(validatedArguments.options);
     this.reloadCommands();
   }
 
-  reloadCommands() {
-    this.commands = __getCommandsFromDirectory();
+  async reloadCommands() {
+    try {
+      this.commands = await __getCommandsFromDirectory();
+      console.log(this.commands);
+    } catch (err) {
+      console.error('ERROR:', 'Command Manager failed to reload commands.');
+      console.error('ERROR:', err.message);
+    }
   }
 }
 
