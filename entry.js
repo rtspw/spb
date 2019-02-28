@@ -5,7 +5,8 @@ const SPBot = require('./src/spbot');
 const botOptions = require('./bot-options');
 
 try {
-  const bot = new SPBot(botOptions);
+  console.log(process.env);
+  const bot = new SPBot(process.env.DISCORD_SPBOT_TOKEN, botOptions);
   bot.connect();
 } catch (e) {
   console.log(e.stack);

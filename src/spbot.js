@@ -49,13 +49,21 @@ function __registerEventListeners(spbot) {
   });
 }
 
+function __timeoutIfFailedToConnect(bot, ms = 10000) {
+  setTimeout(() => {
+    if (bot.ready === false) {
+      console.error('ERROR:', 'Bot connection timed out. Ending session.');
+    }
+  }, ms);
+}
+
 
 class SPBot {
-  constructor(options) {
+  constructor(botToken, options) {
     try {
       const validatedOptions = __validateOptions(options);
       Object.assign(this, validatedOptions);
-      this.eris = new Eris(process.env.DISCORD_SPBOT_TOKEN);
+      this.eris = new Eris(botToken);
       this.logger = new Logger(this.loggerOptions);
       this.messageHandler = new MessageHandler(this.eris, this.logger);
     } catch (err) {
@@ -68,6 +76,7 @@ class SPBot {
     console.info('INIT:', 'Attempting to connect to Discord API.');
     __registerEventListeners(this);
     this.eris.connect();
+    __timeoutIfFailedToConnect(this.eris);
   }
 }
 

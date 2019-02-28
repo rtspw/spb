@@ -15,4 +15,6 @@ const loggerOptions = {
   },
 };
 
-module.exports = { loggerOptions };
+module.exports = {
+  loggerOptions,
+};

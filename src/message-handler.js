@@ -1,34 +1,33 @@
 'use strict';
 
 const Eris = require('eris');
-const Logger = require('./logger/logger');
 
-function __validateArguments(bot, logger, options) {
+function __validateArguments(bot, options) {
   if (!(bot instanceof Eris.Client)) {
     throw new Error('Message Handler did not recieve proper bot instance.');
   }
 
-  if (!(logger instanceof Logger)) {
-    throw new Error('Message Handler did not recieve proper logger instance.');
+  if (typeof options !== 'object') {
+    throw new Error('Message Handler did not recieve a valid options object.');
   }
 
   return {
-    bot, logger, options,
+    bot, options,
   };
 }
 
 class MessageHandler {
-  constructor(bot, logger, options = {}) {
+  constructor(bot, options = {}) {
     console.info('INIT:', 'Setting up message handler.');
-    const validatedArguments = __validateArguments(bot, logger, options);
-    Object.assign(this, validatedArguments);
+    const validatedOptions = __validateArguments(bot, options);
+    Object.assign(this, validatedOptions);
   }
 
   handle(message) {
     // Send through hooks
     // Get command processing function through command processor if exists
     // Get meta-command processing function through command processor if exists
-    this.logger.info(`Recieved message: ${message.content} - ${message.author.username}`);
+    return this;
   }
 }
 

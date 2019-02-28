@@ -50,25 +50,19 @@ function __setPrivateOptions(options = {}) {
   Object.assign(__options, options);
 }
 
-/**
- * @return {Promise} When the directory is created and ready to be used
- */
-function __setupLoggingDirectory() {
-  return new Promise((fulfill, reject) => {
-    const { logDirName: dirName } = __options;
-    util.mkDirPromise(dirName)
-      .then(() => {
-        console.info('INIT:', `Created new '${dirName}' directory for logging output.`);
-        fulfill();
-      }).catch((err) => {
-        if (err.code === 'EEXIST') {
-          console.info('INIT:', `Using directory '${dirName}' for logging output.`);
-          fulfill();
-        } else {
-          reject(err);
-        }
-      });
-  });
+async function __setupLoggingDirectory() {
+  const { logDirName: dirName } = __options;
+  try {
+    await util.mkDirPromise(dirName);
+    console.info('INIT:', `Created new '${dirName}' directory for logging output.`);
+    return Promise.resolve();
+  } catch (err) {
+    if (err.code === 'EEXIST') {
+      console.info('INIT:', `Using directory '${dirName}' for logging output.`);
+      return err;
+    }
+    throw err;
+  }
 }
 
 function __registerWriteStreamListeners(logger) {
@@ -87,19 +81,16 @@ function __registerWriteStreamListeners(logger) {
  * @param {Logger} logger
  * @return {Promise} Logging file and its write stream is created
  */
-function __setupLogToFile(logger) {
-  return new Promise((fulfill, reject) => {
-    __setupLoggingDirectory().then(() => {
-      logger.writeStream = fs.createWriteStream(`${__options.logDirName}/test.txt`, { flags: 'a' });
-      __registerWriteStreamListeners(logger);
-      fulfill();
-    }).catch((err) => {
-      console.error('ERROR:', err.message);
-      console.error('ERROR:', 'Disabling logging to file.');
-      __options.willLogToFile = false;
-      reject();
-    });
-  });
+async function __setupLogToFile(logger) {
+  try {
+    await __setupLoggingDirectory();
+    logger.writeStream = fs.createWriteStream(`${__options.logDirName}/test.txt`, { flags: 'a' });
+    __registerWriteStreamListeners(logger);
+  } catch (error) {
+    console.error('ERROR:', err.message);
+    console.error('ERROR:', 'Disabling logging to file.');
+    __options.willLogToFile = false;
+  }
 }
 
 
