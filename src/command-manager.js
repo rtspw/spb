@@ -1,7 +1,6 @@
 'use strict';
 
 const Eris = require('eris');
-const fs = require('fs');
 const { readDirPromise } = require('./util');
 
 const __options = {};
@@ -46,6 +45,31 @@ async function __getCommandsFromDirectory() {
   }
 }
 
+function __generateAliasToCommandMap(commands = []) {
+  const aliasToIDMap = new Map();
+
+  commands.forEach((command) => {
+    const { aliases } = command.metadata;
+    aliases.forEach((alias) => {
+      aliasToIDMap.set(alias, command);
+    });
+  });
+  return aliasToIDMap;
+}
+
+function __throwErrorForOverlappingAliases(commands = []) {
+  const existingAlises = [];
+  commands.forEach((command) => {
+    const { aliases } = command.metadata;
+    aliases.forEach((alias) => {
+      if (existingAlises.includes(alias)) {
+        throw new Error(`'${alias}' is not a unique alias.`);
+      }
+    });
+    existingAlises.push(...aliases);
+  });
+}
+
 function setPrivateOptions(options) {
   Object.assign(__options, options);
 }
@@ -63,7 +87,8 @@ class CommandManager {
   async reloadCommands() {
     try {
       this.commands = await __getCommandsFromDirectory();
-      console.log(this.commands);
+      __throwErrorForOverlappingAliases(this.commands);
+      this.aliasToCommandMap = __generateAliasToCommandMap(this.commands);
     } catch (err) {
       console.error('ERROR:', 'Command Manager failed to reload commands.');
       console.error('ERROR:', err.message);

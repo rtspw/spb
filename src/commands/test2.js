@@ -1,17 +1,17 @@
 'use strict';
 
 const metadata = {
-  aliases: ['ping', 'pong'],
+  aliases: ['pong'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
 };
 
-const Test = {
+const Test2 = {
   run(bot, message) {
     console.log('hi');
     return this;
   },
 };
 
-module.exports = Test;
+module.exports = Test2;
 module.exports.metadata = metadata;
