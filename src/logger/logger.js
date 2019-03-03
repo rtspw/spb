@@ -18,23 +18,23 @@ function __validateOptions(options) {
   } = options;
 
   if (typeof willLogToFile !== 'boolean') {
-    throw new Error('Must specify whether to log to a file using a boolean.');
+    throw new TypeError('Must specify whether to log to a file using a boolean.');
   }
 
   if (typeof logDirName !== 'string' || logDirName.length <= 0) {
-    throw new Error('Log Directory Name must be a string of at least one character.');
+    throw new TypeError('Log Directory Name must be a string of at least one character.');
   }
 
   if (typeof useANSIStyling !== 'boolean') {
-    throw new Error('Must specify whether to use ANSI styling for console output using a boolean.');
+    throw new TypeError('Must specify whether to use ANSI styling for console output using a boolean.');
   }
 
   if (typeof UTCOffset !== 'number') {
-    throw new Error('UTC Offset must be a number (in minutes).');
+    throw new TypeError('UTC Offset must be a number (in minutes).');
   }
 
   if (typeof formatOptions !== 'object') {
-    throw new Error('Formatting Options must be an object.');
+    throw new TypeError('Formatting Options must be an object.');
   }
 
   return {
@@ -67,13 +67,13 @@ async function __setupLoggingDirectory() {
 
 function __registerWriteStreamListeners(logger) {
   logger.writeStream.on('error', (err) => {
-    console.error('ERROR:', err.message);
-    console.error('ERROR:', 'Disabling logging to file.');
     logger.willLogToFile = false;
+    logger.error('ERROR:', err.message);
+    logger.error('ERROR:', 'Disabling logging to file.');
   });
 
   logger.writeStream.on('finish', () => {
-    console.info('INFO:', 'Logger write stream has been closed.');
+    logger.info('INFO:', 'Logger write stream has been closed.');
   });
 }
 
@@ -82,87 +82,94 @@ function __registerWriteStreamListeners(logger) {
  * @return {Promise} Logging file and its write stream is created
  */
 async function __setupLogToFile(logger) {
+  if (!__options.willLogToFile) throw new Error();
   try {
     await __setupLoggingDirectory();
-    logger.writeStream = fs.createWriteStream(`${__options.logDirName}/test.txt`, { flags: 'a' });
+    const appendFlag = 'a';
+    const logFileName = `${__options.dirName}/test.txt`;
+    logger.writeStream = fs.createWriteStream(logFileName, { flags: appendFlag });
     __registerWriteStreamListeners(logger);
   } catch (error) {
-    console.error('ERROR:', err.message);
+    console.error('ERROR:', error.message);
     console.error('ERROR:', 'Disabling logging to file.');
     __options.willLogToFile = false;
   }
 }
 
+function __logMessageToFile(logger, type = '', message = '') {
+  if (!__options.willLogToFile) return;
+  const logFileMessage = logger.messageBuilder.buildLogFileMessage(type, message);
+  logger.settingUpLogToFile.then(() => {
+    logger.writeStream.write(logFileMessage);
+  });
+}
+
+function __setupANSIStylingOptions() {
+  if (!__options.useANSIStyling) {
+    MessageBuilder.disableStyling();
+  }
+}
 
 class Logger {
   constructor(options = {}) {
-    console.info('INIT:', 'Setting up logger.');
     const validatedOptions = __validateOptions(options);
     __setPrivateOptions(validatedOptions);
+    __setupANSIStylingOptions();
     this.timestampFormatter = new TimestampFormatter(this.UTCOffset, __options.formatOptions);
-    this.messageBuilder = new MessageBuilder(this.timestampFormatter);
-    if (__options.willLogToFile) {
-      this.settingUpLogToFile = __setupLogToFile(this);
-    }
+    this.settingUpLogToFile = __setupLogToFile(this).catch(() => {
+      this.info('Logging to file disabled for this session.');
+    });
   }
 
-  info(message) {
-    const typeStyles = __options.useANSIStyling ? ['white', 'bgGreen'] : [];
-    const messageStyles = __options.useANSIStyling ? ['green'] : [];
-    const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'INFO', styles: typeStyles,
-    }, {
-      text: message, styles: messageStyles,
-    });
+  info(message = '') {
+    const typeStyles = ['white', 'bgGreen'];
+    const messageStyles = [];
+    const timestampStyles = ['grey'];
+    const timestamp = this.timestampFormatter.getTimestampWithOffset();
+    const logConsoleMessage = MessageBuilder.buildLogConsoleMessage(
+      { text: timestamp, styles: timestampStyles },
+      { text: 'INFO', styles: typeStyles },
+      { text: message, styles: messageStyles },
+    );
     console.info(logConsoleMessage);
-    if (__options.willLogToFile) {
-      const logFileMessage = this.messageBuilder.buildLogFileMessage('INFO', message);
-      this.settingUpLogToFile.then(() => {
-        this.writeStream.write(logFileMessage);
-      });
-    }
+    __logMessageToFile(this, 'INFO', message);
   }
 
-  warn(message) {
-    const typeStyles = __options.useANSIStyling ? ['white', 'bgMagenta'] : [];
-    const messageStyles = __options.useANSIStyling ? ['magenta'] : [];
-    const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'WARN', styles: typeStyles,
-    }, {
-      text: message,
-      styles: messageStyles,
-    });
+  warn(message = '') {
+    const typeStyles = ['white', 'bgMagenta'];
+    const messageStyles = [];
+    const timestampStyles = ['grey'];
+    const timestamp = this.timestampFormatter.getTimestampWithOffset();
+    const logConsoleMessage = MessageBuilder.buildLogConsoleMessage(
+      { text: timestamp, styles: timestampStyles },
+      { text: 'WARN', styles: typeStyles },
+      { text: message, styles: messageStyles },
+    );
     console.warn(logConsoleMessage);
-    if (__options.willLogToFile) {
-      const logFileMessage = this.messageBuilder.buildLogFileMessage('WARN', message);
-      this.settingUpLogToFile.then(() => {
-        this.writeStream.write(logFileMessage);
-      });
-    }
+    __logMessageToFile(this, 'WARN', message);
   }
 
-  error(message) {
-    const typeStyles = __options.useANSIStyling ? ['white', 'bgRed'] : [];
-    const messageStyles = __options.useANSIStyling ? ['red'] : [];
-    const logConsoleMessage = this.messageBuilder.buildLogConsoleMessage({
-      text: 'ERROR', styles: typeStyles,
-    }, {
-      text: message,
-      styles: messageStyles,
-    });
+  error(message = '') {
+    const typeStyles = ['white', 'bgRed'];
+    const messageStyles = [];
+    const timestampStyles = ['grey'];
+    const timestamp = this.timestampFormatter.getTimestampWithOffset();
+    const logConsoleMessage = MessageBuilder.buildLogConsoleMessage(
+      { text: timestamp, styles: timestampStyles },
+      { text: 'ERROR', styles: typeStyles },
+      { text: message, styles: messageStyles },
+    );
     console.error(logConsoleMessage);
     if (__options.willLogToFile) {
-      const logFileMessage = this.messageBuilder.buildLogFileMessage('WARN', message);
-      this.settingUpLogToFile.then(() => {
-        this.writeStream.write(logFileMessage);
-      });
+      __logMessageToFile(this, 'ERROR', message);
     }
   }
 
   kill() {
     if (__options.willLogToFile) {
       this.settingUpLogToFile.then(() => {
-        const finalMessage = this.messageBuilder.buildLogFileMessage('END', 'Killing logging to file process.');
+        const timestamp = this.timestampFormatter.getTimestampWithOffset();
+        const finalMessage = MessageBuilder.buildLogFileMessage(timestamp, 'INFO', 'Killing logging to file process.');
         this.writeStream.end(finalMessage);
       });
       __options.willLogToFile = false;

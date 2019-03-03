@@ -12,39 +12,41 @@ function __applyStylesToMessage(message = '', styles = []) {
   return styledMessage;
 }
 
-function __getStyledMessage(type = 'INFO') {
-  if (typeof type === 'string') {
-    return type.trim().padEnd(5);
+function __getStyledMessage(message = 'INFO') {
+  const minLength = 5;
+  if (typeof message === 'string') {
+    return message.trim().padEnd(minLength);
   }
+
   const {
     text = 'INFO',
     styles = [],
-  } = type;
-  const sanitizedText = text.trim().padEnd(5);
-  const styledMessage = __applyStylesToMessage(sanitizedText, styles);
-  return styledMessage;
+  } = message;
+  const minLengthWithANSI = 25;
+  const styledMessage = __applyStylesToMessage(text, styles);
+  const sanitizedStyledMessage = styledMessage.trim().padEnd(minLengthWithANSI);
+  return sanitizedStyledMessage;
 }
 
 
-class MessageBuilder {
-  constructor(timestampFormatter) {
-    this.timestampFormatter = timestampFormatter;
-  }
+const MessageBuilder = {
+  disableStyling() {
+    Ansi.enabled = false;
+  },
 
-  buildLogConsoleMessage(type = 'INFO', message = '') {
+  buildLogConsoleMessage(timestamp = '', type = 'INFO', message = '') {
+    const styledTimestamp = __getStyledMessage(timestamp);
     const styledMessageType = __getStyledMessage(type);
     const styledMessage = __getStyledMessage(message);
-    const timestamp = this.timestampFormatter.getTimestampWithOffset();
-    const logMessage = `${timestamp} ${styledMessageType} | ${styledMessage}`;
+    const logMessage = `${styledTimestamp} ${styledMessageType} | ${styledMessage}`;
     return logMessage;
-  }
+  },
 
-  buildLogFileMessage(type = 'INFO', message = '') {
-    const timestamp = this.timestampFormatter.getTimestampWithOffset();
+  buildLogFileMessage(timestamp = '', type = 'INFO', message = '') {
     const msgType = type.toUpperCase().trim().padEnd(5);
     const logMessage = `${timestamp} ${msgType} | ${message}\n`;
     return logMessage;
-  }
-}
+  },
+};
 
 module.exports = MessageBuilder;

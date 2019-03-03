@@ -1,7 +1,7 @@
 'use strict';
 
 const loggerOptions = {
-  willLogToFile: true,
+  willLogToFile: false,
   logDirName: 'log',
   UTCOffset: -480,
   useANSIStyling: true,

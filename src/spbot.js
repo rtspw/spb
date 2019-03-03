@@ -11,11 +11,11 @@ function __validateOptions(options) {
   } = options;
 
   if (typeof loggerOptions !== 'object') {
-    throw new Error('Logger Options must be an object.');
+    throw new TypeError('Logger Options must be an object.');
   }
 
   if (typeof commandOptions !== 'object') {
-    throw new Error('Command Options must be an object.');
+    throw new TypeError('Command Options must be an object.');
   }
 
   return {
@@ -26,7 +26,6 @@ function __validateOptions(options) {
 
 function __registerEventListeners(spbot) {
   spbot.eris.on('ready', () => {
-    console.info('INIT:', 'Successful connection to Discord API.');
     spbot.logger.info('Bot is setup and ready to use.');
   });
 
@@ -43,11 +42,11 @@ function __registerEventListeners(spbot) {
   });
 
   spbot.eris.on('warn', (message, shardID) => {
-    spbot.logger.warn(`${message} for shard ${shardID}`);
+    spbot.logger.warn(`${message} (shard ${shardID})`);
   });
 
   spbot.eris.on('error', (error, shardID) => {
-    spbot.logger.error(`${error.message} for shard ${shardID}`);
+    spbot.logger.error(`${error.message} (shard ${shardID})`);
   });
 
   spbot.eris.on('connect', (shardID) => {
@@ -55,10 +54,10 @@ function __registerEventListeners(spbot) {
   });
 }
 
-function __timeoutIfFailedToConnect(bot, ms = 10000) {
+function __timeoutIfFailedToConnect(bot, logger, ms = 10000) {
   setTimeout(() => {
-    if (bot.ready === false) {
-      console.error('ERROR:', 'Bot connection timed out. Ending session.');
+    if (!bot.ready) {
+      logger.error('Bot connection timed out. Ending session.');
     }
   }, ms);
 }
@@ -82,7 +81,7 @@ class SPBot {
     console.info('INIT:', 'Attempting to connect to Discord API.');
     __registerEventListeners(this);
     this.eris.connect();
-    __timeoutIfFailedToConnect(this.eris);
+    __timeoutIfFailedToConnect(this.eris, this.logger);
   }
 }
 
