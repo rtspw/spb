@@ -54,26 +54,22 @@ async function __setupLoggingDirectory() {
   const { logDirName: dirName } = __options;
   try {
     await util.mkDirPromise(dirName);
-    console.info('INIT:', `Created new '${dirName}' directory for logging output.`);
-    return Promise.resolve();
   } catch (err) {
-    if (err.code === 'EEXIST') {
-      console.info('INIT:', `Using directory '${dirName}' for logging output.`);
-      return err;
+    if (err.code !== 'EEXIST') {
+      throw err;
     }
-    throw err;
   }
 }
 
 function __registerWriteStreamListeners(logger) {
   logger.writeStream.on('error', (err) => {
     logger.willLogToFile = false;
-    logger.error('ERROR:', err.message);
-    logger.error('ERROR:', 'Disabling logging to file.');
+    logger.error(err.message);
+    logger.error('Disabling logging to file.');
   });
 
   logger.writeStream.on('finish', () => {
-    logger.info('INFO:', 'Logger write stream has been closed.');
+    logger.info('Logger write stream has been closed.');
   });
 }
 
@@ -86,19 +82,19 @@ async function __setupLogToFile(logger) {
   try {
     await __setupLoggingDirectory();
     const appendFlag = 'a';
-    const logFileName = `${__options.dirName}/test.txt`;
+    const logFileName = `${__options.logDirName}/test.txt`;
     logger.writeStream = fs.createWriteStream(logFileName, { flags: appendFlag });
     __registerWriteStreamListeners(logger);
   } catch (error) {
-    console.error('ERROR:', error.message);
-    console.error('ERROR:', 'Disabling logging to file.');
     __options.willLogToFile = false;
+    logger.error(error.message);
+    logger.error('Disabling logging to file.');
   }
 }
 
-function __logMessageToFile(logger, type = '', message = '') {
+function __logMessageToFile(logger, timestamp = '', type = '', message = '') {
   if (!__options.willLogToFile) return;
-  const logFileMessage = logger.messageBuilder.buildLogFileMessage(type, message);
+  const logFileMessage = MessageBuilder.buildLogFileMessage(timestamp, type, message);
   logger.settingUpLogToFile.then(() => {
     logger.writeStream.write(logFileMessage);
   });
@@ -115,10 +111,11 @@ class Logger {
     const validatedOptions = __validateOptions(options);
     __setPrivateOptions(validatedOptions);
     __setupANSIStylingOptions();
-    this.timestampFormatter = new TimestampFormatter(this.UTCOffset, __options.formatOptions);
+    this.timestampFormatter = new TimestampFormatter(__options.UTCOffset, __options.formatOptions);
     this.settingUpLogToFile = __setupLogToFile(this).catch(() => {
       this.info('Logging to file disabled for this session.');
     });
+    this.info('New logger instance ready.');
   }
 
   info(message = '') {
@@ -131,8 +128,8 @@ class Logger {
       { text: 'INFO', styles: typeStyles },
       { text: message, styles: messageStyles },
     );
+    __logMessageToFile(this, timestamp, 'INFO', message);
     console.info(logConsoleMessage);
-    __logMessageToFile(this, 'INFO', message);
   }
 
   warn(message = '') {
@@ -145,8 +142,8 @@ class Logger {
       { text: 'WARN', styles: typeStyles },
       { text: message, styles: messageStyles },
     );
+    __logMessageToFile(this, timestamp, 'WARN', message);
     console.warn(logConsoleMessage);
-    __logMessageToFile(this, 'WARN', message);
   }
 
   error(message = '') {
@@ -159,10 +156,8 @@ class Logger {
       { text: 'ERROR', styles: typeStyles },
       { text: message, styles: messageStyles },
     );
+    __logMessageToFile(this, timestamp, 'ERROR', message);
     console.error(logConsoleMessage);
-    if (__options.willLogToFile) {
-      __logMessageToFile(this, 'ERROR', message);
-    }
   }
 
   kill() {

@@ -36,13 +36,21 @@ function __validateArguments(bot, logger, options) {
   };
 }
 
+function __emptyRequireCache(files = []) {
+  files.forEach((file) => {
+    const filePath = require.resolve(`./${__options.commandDirectory}/${file}`);
+    delete require.cache[filePath];
+  });
+}
+
 async function __getCommandsFromDirectory() {
   const commandDirectoryPath = `${__dirname}/${__options.commandDirectory}`;
   try {
     const files = await readDirPromise(commandDirectoryPath);
+    const filteredFiles = files.filter(filename => filename !== 'base-command.js');
+    __emptyRequireCache(filteredFiles);
     const commands = [];
-    files.forEach((file) => {
-      if (file === 'base-command.js') return;
+    filteredFiles.forEach((file) => {
       const command = require(`${commandDirectoryPath}/${file}`);
       commands.push(command);
     });
@@ -81,9 +89,9 @@ function __attachOtherObjectsToCommands(commandManager) {
   const { commands } = commandManager;
   commands.forEach((command) => {
     const {
-      usesBot = true,
+      usesBot = false,
       usesLogger = false,
-      usesCommandMap = false,
+      usesCommandManager = false,
     } = command.metadata;
 
     if (usesBot) {
@@ -94,8 +102,8 @@ function __attachOtherObjectsToCommands(commandManager) {
       command.useLogger(commandManager.logger);
     }
 
-    if (usesCommandMap) {
-      command.useCommandMap(commandManager.aliasToCommandMap);
+    if (usesCommandManager) {
+      command.useCommandManager(commandManager);
     }
   });
 }
@@ -119,8 +127,9 @@ class CommandManager {
     try {
       this.commands = await __getCommandsFromDirectory();
       __throwErrorForOverlappingAliases(this.commands);
-      this.aliasToCommandMap = __generateAliasToCommandMap(this.commands);
       __attachOtherObjectsToCommands(this);
+      this.aliasToCommandMap = __generateAliasToCommandMap(this.commands);
+      this.logger.info('Command Manager has reloaded commands successfully.');
     } catch (err) {
       this.logger.warn('Command Manager failed to reload commands. Reverting to old commands.');
       this.logger.warn(err.message);

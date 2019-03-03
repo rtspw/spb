@@ -57,19 +57,21 @@ class MessageHandler {
     this.commandManager = new CommandManager(this.bot, this.logger, this.commandManagerOptions);
   }
 
-  handle(discordMessage) {
+  async handle(discordMessage) {
     // Send through hooks
+
     // Get command processing function through command processor if exists
     const { content } = discordMessage;
     const command = this.commandManager.getCommandFromAlias(content);
     if (command !== undefined) {
       try {
-        command.run(content);
+        await command.run(discordMessage);
       } catch (err) {
         this.logger.error(`Could not execute command '${content}' properly.`);
         this.logger.error(err.message);
       }
     }
+
     // Get meta-command processing function through command processor if exists
     return this;
   }

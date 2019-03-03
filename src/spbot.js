@@ -78,7 +78,7 @@ class SPBot {
   }
 
   connect() {
-    console.info('INIT:', 'Attempting to connect to Discord API.');
+    this.logger.info('Attempting to connect to Discord API.');
     __registerEventListeners(this);
     this.eris.connect();
     __timeoutIfFailedToConnect(this.eris, this.logger);
