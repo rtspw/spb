@@ -11,8 +11,8 @@ const BaseCommand = {
     return this;
   },
 
-  useCommandManager(commandManager) {
-    this.commandManager = commandManager;
+  useCommandMap(commandMap) {
+    this.commandMap = commandMap;
     return this;
   },
 };

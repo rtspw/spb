@@ -6,6 +6,7 @@ const metadata = {
   aliases: ['peng'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
+  usesBot: false,
 };
 
 const Test2 = Object.create(BaseCommand);

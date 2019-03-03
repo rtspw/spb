@@ -77,6 +77,29 @@ function __throwErrorForOverlappingAliases(commands = []) {
   });
 }
 
+function __attachOtherObjectsToCommands(commandManager) {
+  const { commands } = commandManager;
+  commands.forEach((command) => {
+    const {
+      usesBot = true,
+      usesLogger = false,
+      usesCommandMap = false,
+    } = command.metadata;
+
+    if (usesBot) {
+      command.useBot(commandManager.bot);
+    }
+
+    if (usesLogger) {
+      command.useLogger(commandManager.logger);
+    }
+
+    if (usesCommandMap) {
+      command.useCommandMap(commandManager.aliasToCommandMap);
+    }
+  });
+}
+
 function setPrivateOptions(options) {
   Object.assign(__options, options);
 }
@@ -97,6 +120,7 @@ class CommandManager {
       this.commands = await __getCommandsFromDirectory();
       __throwErrorForOverlappingAliases(this.commands);
       this.aliasToCommandMap = __generateAliasToCommandMap(this.commands);
+      __attachOtherObjectsToCommands(this);
     } catch (err) {
       this.logger.warn('Command Manager failed to reload commands. Reverting to old commands.');
       this.logger.warn(err.message);

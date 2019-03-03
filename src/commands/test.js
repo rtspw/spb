@@ -6,15 +6,13 @@ const metadata = {
   aliases: ['ping', 'pong'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
-  usesBot: true,
-  usesLogger: true,
-  usesCommandMap: true,
+  usesBot: false,
 };
 
 const Test = Object.create(BaseCommand);
 
-Test.run = function run(bot, message) {
-  console.log('hi');
+Test.run = function run(message) {
+  console.log(this.commandMap);
   return this;
 };
 

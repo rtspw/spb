@@ -63,9 +63,12 @@ class MessageHandler {
     const { content } = discordMessage;
     const command = this.commandManager.getCommandFromAlias(content);
     if (command !== undefined) {
-      command
-        .useBot(this.bot)
-        .run(content);
+      try {
+        command.run(content);
+      } catch (err) {
+        this.logger.error(`Could not execute command '${content}' properly.`);
+        this.logger.error(err.message);
+      }
     }
     // Get meta-command processing function through command processor if exists
     return this;
