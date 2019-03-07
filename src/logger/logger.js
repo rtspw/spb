@@ -119,7 +119,7 @@ class Logger {
   }
 
   info(message = '') {
-    const typeStyles = ['white', 'bgGreen'];
+    const typeStyles = ['black', 'bgGreen'];
     const messageStyles = [];
     const timestampStyles = ['grey'];
     const timestamp = this.timestampFormatter.getTimestampWithOffset();
@@ -133,7 +133,7 @@ class Logger {
   }
 
   warn(message = '') {
-    const typeStyles = ['white', 'bgMagenta'];
+    const typeStyles = ['black', 'bgMagenta'];
     const messageStyles = [];
     const timestampStyles = ['grey'];
     const timestamp = this.timestampFormatter.getTimestampWithOffset();
@@ -147,7 +147,7 @@ class Logger {
   }
 
   error(message = '') {
-    const typeStyles = ['white', 'bgRed'];
+    const typeStyles = ['black', 'bgRed'];
     const messageStyles = [];
     const timestampStyles = ['grey'];
     const timestamp = this.timestampFormatter.getTimestampWithOffset();

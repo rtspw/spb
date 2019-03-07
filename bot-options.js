@@ -17,7 +17,7 @@ const loggerOptions = {
 
 const commandOptions = {
   defaultPrefix: 's.',
-  adminIDs: [],
+  // adminIDs: ['128369934857273344'],
   commandDirectory: 'commands',
 };
 

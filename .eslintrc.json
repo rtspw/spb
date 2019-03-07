@@ -10,6 +10,7 @@
         "no-param-reassign": "warn",
         "linebreak-style": "off",
         "global-require": "off",
-        "import/no-dynamic-require": "off"
+        "import/no-dynamic-require": "off",
+        "eqeqeq": [2, "allow-null"]
     }
 }

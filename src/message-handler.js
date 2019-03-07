@@ -37,15 +37,19 @@ function __validateArguments(bot, logger, options) {
     }
   });
 
+  if (typeof commandDirectory !== 'string' && commandDirectory.length < 1) {
+    throw new TypeError('Message Handler recieved invalid commandDirectory name.');
+  }
+
 
   return {
     bot,
     logger,
     options: {
-      defaultPrefix, adminIDs,
+      defaultPrefix,
     },
     commandManagerOptions: {
-      commandDirectory,
+      commandDirectory, adminIDs,
     },
   };
 }
@@ -63,16 +67,15 @@ class MessageHandler {
     // Get command processing function through command processor if exists
     const { content } = discordMessage;
     const command = this.commandManager.getCommandFromAlias(content);
-    if (command !== undefined) {
+    if (command != null) {
       try {
-        await command.run(discordMessage);
+        await command.runCommand(discordMessage);
       } catch (err) {
         this.logger.error(`Could not execute command '${content}' properly.`);
         this.logger.error(err.message);
       }
     }
 
-    // Get meta-command processing function through command processor if exists
     return this;
   }
 }

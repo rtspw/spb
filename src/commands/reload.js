@@ -1,17 +1,21 @@
 'use strict';
 
-const BaseCommand = require('./base-command');
-
-const metadata = {
+module.exports.metadata = {
   aliases: ['reload'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
   usesCommandManager: true,
 };
 
-const Test2 = Object.create(BaseCommand);
+module.exports.hooks = {
+  onPermissionError(message) {
+    const { channel } = message;
+    channel.createMessage('You do not have sufficient permissions to run this command.');
+    throw new Error('test');
+  },
+};
 
-Test2.run = async function run(message) {
+module.exports.run = async function run(message) {
   const { channel } = message;
   try {
     await this.commandManager.reloadCommands();
@@ -20,6 +24,3 @@ Test2.run = async function run(message) {
     channel.createMessage('Failed to reload commands.');
   }
 };
-
-module.exports = Test2;
-module.exports.metadata = metadata;

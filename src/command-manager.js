@@ -2,6 +2,7 @@
 
 const Eris = require('eris');
 const Logger = require('./logger/logger');
+const Command = require('./command');
 const { readDirPromise } = require('./util');
 
 const __options = {};
@@ -20,8 +21,20 @@ function __validateArguments(bot, logger, options) {
   }
 
   const {
+    adminIDs = [],
     commandDirectory = 'commands',
   } = options;
+
+
+  if (!(adminIDs instanceof Array)) {
+    throw new TypeError('Admin IDs must be an array.');
+  }
+
+  adminIDs.forEach((id) => {
+    if (typeof id !== 'string') {
+      throw new TypeError('Admin IDs must be an array of strings.');
+    }
+  });
 
   if (typeof commandDirectory !== 'string' && commandDirectory.length < 1) {
     throw new TypeError('Message Handler recieved invalid commandDirectory name.');
@@ -31,6 +44,7 @@ function __validateArguments(bot, logger, options) {
     bot: { bot },
     logger: { logger },
     options: {
+      adminIDs,
       commandDirectory,
     },
   };
@@ -43,19 +57,34 @@ function __emptyRequireCache(files = []) {
   });
 }
 
-async function __getCommandsFromDirectory() {
+async function __getCommandInfoFromDirectory() {
   const commandDirectoryPath = `${__dirname}/${__options.commandDirectory}`;
+  const files = await readDirPromise(commandDirectoryPath);
+  __emptyRequireCache(files);
+  const commandsInfo = [];
+  files.forEach((file) => {
+    const commandInfo = require(`${commandDirectoryPath}/${file}`);
+    commandsInfo.push(commandInfo);
+  });
+  return commandsInfo;
+}
+
+function __wrapCommandsInfoIntoCommandObjects(commandsInfo = []) {
+  const commands = [];
+  commandsInfo.forEach((commandInfo) => {
+    const command = new Command(commandInfo.run, commandInfo.metadata, commandInfo.hooks, __options);
+    commands.push(command);
+  });
+  return commands;
+}
+
+async function __getCommandsFromDirectory(commandManager) {
   try {
-    const files = await readDirPromise(commandDirectoryPath);
-    const filteredFiles = files.filter(filename => filename !== 'base-command.js');
-    __emptyRequireCache(filteredFiles);
-    const commands = [];
-    filteredFiles.forEach((file) => {
-      const command = require(`${commandDirectoryPath}/${file}`);
-      commands.push(command);
-    });
+    const commandsInfo = await __getCommandInfoFromDirectory();
+    const commands = await __wrapCommandsInfoIntoCommandObjects(commandsInfo);
     return commands;
   } catch (err) {
+    commandManager.logger.warn('Failed to initialize commands from directory.');
     throw err;
   }
 }
@@ -125,7 +154,7 @@ class CommandManager {
 
   async reloadCommands() {
     try {
-      this.commands = await __getCommandsFromDirectory();
+      this.commands = await __getCommandsFromDirectory(this);
       __throwErrorForOverlappingAliases(this.commands);
       __attachOtherObjectsToCommands(this);
       this.aliasToCommandMap = __generateAliasToCommandMap(this.commands);
