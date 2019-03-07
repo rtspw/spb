@@ -55,33 +55,32 @@ function __registerEventListeners(spbot) {
 }
 
 function __timeoutIfFailedToConnect(bot, logger, ms = 10000) {
-  setTimeout(() => {
-    if (!bot.ready) {
-      logger.error('Bot connection timed out. Ending session.');
-    }
-  }, ms);
+  return new Promise((resolve, reject) => {
+    setTimeout(() => {
+      if (!bot.ready) {
+        logger.error('Bot connection timed out. Ending session.');
+        reject(new Error('Bot connection timed out.'));
+      }
+      resolve();
+    }, ms);
+  });
 }
 
 
 class SPBot {
   constructor(botToken, options) {
-    try {
-      const validatedOptions = __validateOptions(options);
-      Object.assign(this, validatedOptions);
-      this.eris = new Eris(botToken);
-      this.logger = new Logger(this.loggerOptions);
-      this.messageHandler = new MessageHandler(this.eris, this.logger, this.commandOptions);
-    } catch (err) {
-      console.error('ERROR:', 'Failed to initialize SPBot instance.');
-      throw err;
-    }
+    const validatedOptions = __validateOptions(options);
+    Object.assign(this, validatedOptions);
+    this.eris = new Eris(botToken);
+    this.logger = new Logger(this.loggerOptions);
+    this.messageHandler = new MessageHandler(this.eris, this.logger, this.commandOptions);
   }
 
-  connect() {
+  async connect() {
     this.logger.info('Attempting to connect to Discord API.');
     __registerEventListeners(this);
     this.eris.connect();
-    __timeoutIfFailedToConnect(this.eris, this.logger);
+    await __timeoutIfFailedToConnect(this.eris, this.logger);
   }
 }
 

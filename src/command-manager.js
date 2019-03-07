@@ -69,10 +69,13 @@ async function __getCommandInfoFromDirectory() {
   return commandsInfo;
 }
 
-function __wrapCommandsInfoIntoCommandObjects(commandsInfo = []) {
+async function __wrapCommandsInfoIntoCommandObjects(commandsInfo = []) {
   const commands = [];
   commandsInfo.forEach((commandInfo) => {
-    const command = new Command(commandInfo.run, commandInfo.metadata, commandInfo.hooks, __options);
+    const {
+      run, metadata, hooks,
+    } = commandInfo;
+    const command = new Command(run, metadata, hooks, __options);
     commands.push(command);
   });
   return commands;
@@ -149,7 +152,6 @@ class CommandManager {
     Object.assign(this, validatedArguments.logger);
     setPrivateOptions(validatedArguments.options);
     this.commands = [];
-    this.reloadCommands();
   }
 
   async reloadCommands() {
@@ -161,7 +163,7 @@ class CommandManager {
       this.logger.info('Command Manager has reloaded commands successfully.');
     } catch (err) {
       this.logger.warn('Command Manager failed to reload commands. Reverting to old commands.');
-      this.logger.warn(err.message);
+      throw err;
     }
   }
 

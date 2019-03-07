@@ -1,12 +1,15 @@
 'use strict';
 
 const PermissionError = require('./errors/permission-error');
+const UserCooldownError = require('./errors/user-cooldown-error');
+const UserCooldowns = require('./user-cooldowns');
 
 function __validateMetadata(metadata) {
   const {
     aliases,
     description = '',
     adminOnly = false,
+    userCooldown = 0,
     usesBot = false,
     usesLogger = false,
     usesCommandManager = false,
@@ -28,6 +31,9 @@ function __validateMetadata(metadata) {
   if (typeof adminOnly !== 'boolean') {
     throw new TypeError('Must specify adminOnly using a boolean.');
   }
+  if (typeof userCooldown !== 'number') {
+    throw new TypeError('User Cooldown must be a number (in seconds).');
+  }
   if (typeof usesBot !== 'boolean') {
     throw new TypeError('Must specify usesBot using a boolean.');
   }
@@ -42,6 +48,7 @@ function __validateMetadata(metadata) {
     aliases,
     description,
     adminOnly,
+    userCooldown,
     usesBot,
     usesLogger,
     usesCommandManager,
@@ -79,7 +86,7 @@ function __validateHooks(hooks = {}) {
 
   Object.entries(hooks).forEach(([name, hook]) => {
     if (hook != null && typeof hook !== 'function') {
-      throw new TypeError(`Hook ${name} must be a function.`);
+      throw new TypeError(`Hook '${name}' must be a function.`);
     }
   });
 
@@ -97,27 +104,40 @@ function __throwIfLackingUserPermissions(command, message) {
   }
 }
 
+function __handleErrorsWithHooks(command, message, err) {
+  if (err instanceof PermissionError) {
+    const { onPermissionError } = command.hooks;
+    if (onPermissionError != null) {
+      onPermissionError(message);
+    }
+  } else if (err instanceof UserCooldownError) {
+    const { onUserCooldownError, onAnyCooldownError } = command.hooks;
+    if (onUserCooldownError != null) {
+      const { totalCooldown, timeLeft } = err;
+      onUserCooldownError(message, { totalCooldown, timeLeft });
+    } else if (onAnyCooldownError != null) {
+      const { totalCooldown, timeLeft } = err;
+      onAnyCooldownError(message, { totalCooldown, timeLeft });
+    }
+  } else {
+    throw err;
+  }
+}
+
 class Command {
   constructor(runFunction, metadata, hooks, options) {
-    this.runFunction = runFunction;
     this.metadata = __validateMetadata(metadata);
     this.hooks = __validateHooks(hooks);
     this.options = __validateOptions(options);
+    this.runFunction = UserCooldowns.decorate(runFunction, this.metadata.userCooldown);
   }
 
-  runCommand(message) {
+  async runCommand(message) {
     try {
       __throwIfLackingUserPermissions(this, message);
-      this.runFunction(message);
+      await this.runFunction(message);
     } catch (err) {
-      if (err instanceof PermissionError) {
-        const { onPermissionError } = this.hooks;
-        if (onPermissionError != null) {
-          onPermissionError(message);
-        }
-      } else {
-        throw err;
-      }
+      __handleErrorsWithHooks(this, message, err);
     }
   }
 

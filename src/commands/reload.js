@@ -11,7 +11,6 @@ module.exports.hooks = {
   onPermissionError(message) {
     const { channel } = message;
     channel.createMessage('You do not have sufficient permissions to run this command.');
-    throw new Error('test');
   },
 };
 
@@ -22,5 +21,6 @@ module.exports.run = async function run(message) {
     channel.createMessage('Reload successful.');
   } catch (err) {
     channel.createMessage('Failed to reload commands.');
+    throw err;
   }
 };

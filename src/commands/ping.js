@@ -4,12 +4,15 @@ module.exports.metadata = {
   aliases: ['ping', 'pong'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
+  userCooldown: 100,
 };
 
 module.exports.hooks = {
-  onPermissionError(message) {
+  onUserCooldownError(message, info) {
     const { channel } = message;
-    channel.createMessage('You do not have sufficient permissions to run this command.');
+    const { timeLeft } = info;
+    const timeLeftInSeconds = Math.round(timeLeft / 1000);
+    channel.createMessage(`Too fast! There is still ${timeLeftInSeconds} seconds of cooldown left.`);
   },
 };
 
