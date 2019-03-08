@@ -1,10 +1,11 @@
 'use strict';
 
 module.exports.metadata = {
-  aliases: ['reload'],
-  description: 'Check response time from Discord to the bot.',
+  aliases: ['shutdown'],
+  description: 'Disconnects the bot from Discord and shuts down the process.',
   adminOnly: true,
-  usesCommandManager: true,
+  usesBot: true,
+  usesLogger: true,
 };
 
 module.exports.hooks = {
@@ -17,10 +18,12 @@ module.exports.hooks = {
 module.exports.run = async function run(message) {
   const { channel } = message;
   try {
-    await this.commandManager.reloadCommands();
-    channel.createMessage('Reload successful.');
+    this.logger.info('Shutting down bot...');
+    await this.logger.kill();
+    await this.bot.disconnect();
+    process.exit();
   } catch (err) {
-    channel.createMessage('Failed to reload commands.');
+    channel.createMessage('Failed to shutdown bot.');
     throw err;
   }
 };

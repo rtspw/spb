@@ -1,7 +1,7 @@
 'use strict';
 
 const loggerOptions = {
-  willLogToFile: false,
+  willLogToFile: true,
   logDirName: 'log',
   UTCOffset: -480,
   useANSIStyling: true,
@@ -17,7 +17,7 @@ const loggerOptions = {
 
 const commandOptions = {
   defaultPrefix: 's.',
-  // adminIDs: ['128369934857273344'],
+  adminIDs: ['128369934857273344'],
   commandDirectory: 'commands',
 };
 

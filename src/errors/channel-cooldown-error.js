@@ -2,11 +2,11 @@
 
 const CooldownError = require('./cooldown-error');
 
-class UserCooldownError extends CooldownError {
+class ChannelCooldownError extends CooldownError {
   constructor(totalCooldown = 0, timeLeft = 0, ...args) {
     super(totalCooldown, timeLeft, ...args);
-    this.name = 'UserCooldownError';
+    this.name = 'ChannelCooldownError';
   }
 }
 
-module.exports = UserCooldownError;
+module.exports = ChannelCooldownError;

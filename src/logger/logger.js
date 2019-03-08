@@ -161,14 +161,18 @@ class Logger {
   }
 
   kill() {
-    if (__options.willLogToFile) {
-      this.settingUpLogToFile.then(() => {
-        const timestamp = this.timestampFormatter.getTimestampWithOffset();
-        const finalMessage = MessageBuilder.buildLogFileMessage(timestamp, 'INFO', 'Killing logging to file process.');
-        this.writeStream.end(finalMessage);
-      });
-      __options.willLogToFile = false;
-    }
+    return new Promise((resolve) => {
+      if (__options.willLogToFile) {
+        this.settingUpLogToFile.then(() => {
+          const timestamp = this.timestampFormatter.getTimestampWithOffset();
+          const finalMessage = MessageBuilder.buildLogFileMessage(timestamp, 'INFO', 'Killing logging to file process.');
+          this.writeStream.end(finalMessage, () => {
+            resolve();
+          });
+        });
+        __options.willLogToFile = false;
+      }
+    });
   }
 }
 

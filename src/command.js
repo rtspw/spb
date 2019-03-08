@@ -2,7 +2,8 @@
 
 const PermissionError = require('./errors/permission-error');
 const UserCooldownError = require('./errors/user-cooldown-error');
-const UserCooldowns = require('./user-cooldowns');
+const ChannelCooldownError = require('./errors/channel-cooldown-error');
+const Cooldowns = require('./cooldowns');
 
 function __validateMetadata(metadata) {
   const {
@@ -10,6 +11,7 @@ function __validateMetadata(metadata) {
     description = '',
     adminOnly = false,
     userCooldown = 0,
+    channelCooldown = 0,
     usesBot = false,
     usesLogger = false,
     usesCommandManager = false,
@@ -34,6 +36,9 @@ function __validateMetadata(metadata) {
   if (typeof userCooldown !== 'number') {
     throw new TypeError('User Cooldown must be a number (in seconds).');
   }
+  if (typeof channelCooldown !== 'number') {
+    throw new TypeError('Channel Cooldown must be a number (in seconds).');
+  }
   if (typeof usesBot !== 'boolean') {
     throw new TypeError('Must specify usesBot using a boolean.');
   }
@@ -49,6 +54,7 @@ function __validateMetadata(metadata) {
     description,
     adminOnly,
     userCooldown,
+    channelCooldown,
     usesBot,
     usesLogger,
     usesCommandManager,
@@ -119,6 +125,15 @@ function __handleErrorsWithHooks(command, message, err) {
       const { totalCooldown, timeLeft } = err;
       onAnyCooldownError(message, { totalCooldown, timeLeft });
     }
+  } else if (err instanceof ChannelCooldownError) {
+    const { onChannelCooldownError, onAnyCooldownError } = command.hooks;
+    if (onChannelCooldownError != null) {
+      const { totalCooldown, timeLeft } = err;
+      onChannelCooldownError(message, { totalCooldown, timeLeft });
+    } else if (onAnyCooldownError != null) {
+      const { totalCooldown, timeLeft } = err;
+      onAnyCooldownError(message, { totalCooldown, timeLeft });
+    }
   } else {
     throw err;
   }
@@ -129,7 +144,8 @@ class Command {
     this.metadata = __validateMetadata(metadata);
     this.hooks = __validateHooks(hooks);
     this.options = __validateOptions(options);
-    this.runFunction = UserCooldowns.decorate(runFunction, this.metadata.userCooldown);
+    const { userCooldown, channelCooldown } = this.metadata;
+    this.runFunction = Cooldowns.decorateWithAllCooldowns(runFunction, userCooldown, channelCooldown);
   }
 
   async runCommand(message) {

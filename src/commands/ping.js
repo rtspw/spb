@@ -4,7 +4,8 @@ module.exports.metadata = {
   aliases: ['ping', 'pong'],
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
-  userCooldown: 100,
+  userCooldown: 10,
+  channelCooldown: 5,
 };
 
 module.exports.hooks = {
@@ -13,6 +14,12 @@ module.exports.hooks = {
     const { timeLeft } = info;
     const timeLeftInSeconds = Math.round(timeLeft / 1000);
     channel.createMessage(`Too fast! There is still ${timeLeftInSeconds} seconds of cooldown left.`);
+  },
+  onChannelCooldownError(message, info) {
+    const { channel } = message;
+    const { timeLeft } = info;
+    const timeLeftInSeconds = Math.round(timeLeft / 1000);
+    channel.createMessage(`Channel Cooldown! There is still ${timeLeftInSeconds} seconds of cooldown left.`);
   },
 };
 
