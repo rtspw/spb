@@ -6,57 +6,29 @@ const ChannelCooldownError = require('./errors/channel-cooldown-error');
 const Cooldowns = {
 
   /**
-   * Returns a function that limits function calls by users
-   * Cooldowns are stored in <userID:timestamp> pairs in an object saved by closure
+   * Returns a function that limits function calls
+   * Cooldowns are stored in <id:timestamp> pairs in an object saved by closure
    * @param {Function} fn to decorate with cooldowns
    * @param {number} cooldown in milliseconds
    */
-  decorateWithUserCooldowns(fn, cooldown = 0) {
+  decorateWithCooldowns(fn, cooldown = 0, CooldownErrorConstructor, getIDCallback) {
     if (cooldown == null || cooldown <= 0) return fn;
 
-    const userCooldowns = {};
+    const cooldowns = {};
     return async function runWithUserCooldowns(message, ...args) {
-      const { id: userID } = message.author;
+      const id = getIDCallback(message);
       const cooldownInMs = cooldown * 1000;
 
-      if (userCooldowns[userID] != null) {
-        const calltime = userCooldowns[userID];
+      if (cooldowns[id] != null) {
+        const calltime = cooldowns[id];
         const elapsedTime = Date.now() - calltime;
         const remainingTime = cooldownInMs - elapsedTime;
-        throw new UserCooldownError(cooldown, remainingTime);
+        throw new CooldownErrorConstructor(cooldown, remainingTime);
       }
 
-      userCooldowns[userID] = Date.now();
+      cooldowns[id] = Date.now();
       setTimeout(() => {
-        delete userCooldowns[userID];
-      }, cooldownInMs);
-
-      try {
-        await fn(message, ...args);
-      } catch (err) {
-        throw err;
-      }
-    };
-  },
-
-  decorateWithChannelCooldowns(fn, cooldown = 0) {
-    if (cooldown == null || cooldown <= 0) return fn;
-
-    const channelCooldowns = {};
-    return async function runWithChannelCooldowns(message, ...args) {
-      const { id: userID } = message.author;
-      const cooldownInMs = cooldown * 1000;
-
-      if (channelCooldowns[userID] != null) {
-        const calltime = channelCooldowns[userID];
-        const elapsedTime = Date.now() - calltime;
-        const remainingTime = cooldownInMs - elapsedTime;
-        throw new ChannelCooldownError(cooldown, remainingTime);
-      }
-
-      channelCooldowns[userID] = Date.now();
-      setTimeout(() => {
-        delete channelCooldowns[userID];
+        delete cooldowns[id];
       }, cooldownInMs);
 
       try {
@@ -68,8 +40,18 @@ const Cooldowns = {
   },
 
   decorateWithAllCooldowns(fn, userCooldown = 0, channelCooldown = 0) {
-    const fnWithUserCooldowns = this.decorateWithUserCooldowns(fn, userCooldown);
-    const fnWithChannelCooldowns = this.decorateWithChannelCooldowns(fnWithUserCooldowns, channelCooldown);
+    const fnWithUserCooldowns = this.decorateWithCooldowns(
+      fn,
+      userCooldown,
+      UserCooldownError,
+      message => message.author.id,
+    );
+    const fnWithChannelCooldowns = this.decorateWithCooldowns(
+      fnWithUserCooldowns,
+      channelCooldown,
+      ChannelCooldownError,
+      message => message.channel.id,
+    );
     return fnWithChannelCooldowns;
   },
 };
