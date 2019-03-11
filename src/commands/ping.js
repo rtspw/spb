@@ -5,7 +5,8 @@ module.exports.metadata = {
   description: 'Check response time from Discord to the bot.',
   adminOnly: false,
   userCooldown: 10,
-  channelCooldown: 5,
+  channelCooldown: 7,
+  guildCooldown: 4,
 };
 
 module.exports.hooks = {
@@ -20,6 +21,12 @@ module.exports.hooks = {
     const { timeLeft } = info;
     const timeLeftInSeconds = Math.round(timeLeft / 1000);
     channel.createMessage(`Channel Cooldown! There is still ${timeLeftInSeconds} seconds of cooldown left.`);
+  },
+  onGuildCooldownError(message, info) {
+    const { channel } = message;
+    const { timeLeft } = info;
+    const timeLeftInSeconds = Math.floor((timeLeft / 1000) + 0.5);
+    channel.createMessage(`Guild Cooldown! ${timeLeftInSeconds} seconds of cooldown left.`);
   },
 };
 

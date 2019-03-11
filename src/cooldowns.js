@@ -2,6 +2,8 @@
 
 const UserCooldownError = require('./errors/user-cooldown-error');
 const ChannelCooldownError = require('./errors/channel-cooldown-error');
+const GuildCooldownError = require('./errors/guild-cooldown-error');
+
 
 const Cooldowns = {
 
@@ -15,7 +17,7 @@ const Cooldowns = {
     if (cooldown == null || cooldown <= 0) return fn;
 
     const cooldowns = {};
-    return async function runWithUserCooldowns(message, ...args) {
+    return async function runWithCooldowns(message, ...args) {
       const id = getIDCallback(message);
       const cooldownInMs = cooldown * 1000;
 
@@ -39,20 +41,31 @@ const Cooldowns = {
     };
   },
 
-  decorateWithAllCooldowns(fn, userCooldown = 0, channelCooldown = 0) {
+  /**
+   * Returns a function decorated with all existing cooldowns
+   * @param {Function} fn
+   * @param {Object} cooldowns
+   */
+  decorateWithAllCooldowns(fn, cooldowns = {}) {
     const fnWithUserCooldowns = this.decorateWithCooldowns(
       fn,
-      userCooldown,
+      cooldowns.userCooldown,
       UserCooldownError,
       message => message.author.id,
     );
     const fnWithChannelCooldowns = this.decorateWithCooldowns(
       fnWithUserCooldowns,
-      channelCooldown,
+      cooldowns.channelCooldown,
       ChannelCooldownError,
       message => message.channel.id,
     );
-    return fnWithChannelCooldowns;
+    const fnWithGuildCooldowns = this.decorateWithCooldowns(
+      fnWithChannelCooldowns,
+      cooldowns.guildCooldown,
+      GuildCooldownError,
+      message => message.channel.guild.id,
+    );
+    return fnWithGuildCooldowns;
   },
 };
 
