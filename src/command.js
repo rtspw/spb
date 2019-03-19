@@ -116,6 +116,16 @@ function __throwIfLackingUserPermissions(command, message) {
   }
 }
 
+function __handleCooldownError(message, error, specificCallback, genericCallback) {
+  if (specificCallback != null) {
+    const { totalCooldown, timeLeft } = error;
+    specificCallback(message, { totalCooldown, timeLeft });
+  } else if (genericCallback != null) {
+    const { totalCooldown, timeLeft } = error;
+    genericCallback(message, { totalCooldown, timeLeft });
+  }
+}
+
 function __handleErrorsWithHooks(command, message, err) {
   if (err instanceof PermissionError) {
     const { onPermissionError } = command.hooks;
@@ -124,35 +134,18 @@ function __handleErrorsWithHooks(command, message, err) {
     }
   } else if (err instanceof UserCooldownError) {
     const { onUserCooldownError, onAnyCooldownError } = command.hooks;
-    if (onUserCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onUserCooldownError(message, { totalCooldown, timeLeft });
-    } else if (onAnyCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onAnyCooldownError(message, { totalCooldown, timeLeft });
-    }
+    __handleCooldownError(message, err, onUserCooldownError, onAnyCooldownError);
   } else if (err instanceof ChannelCooldownError) {
     const { onChannelCooldownError, onAnyCooldownError } = command.hooks;
-    if (onChannelCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onChannelCooldownError(message, { totalCooldown, timeLeft });
-    } else if (onAnyCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onAnyCooldownError(message, { totalCooldown, timeLeft });
-    }
+    __handleCooldownError(message, err, onChannelCooldownError, onAnyCooldownError);
   } else if (err instanceof GuildCooldownError) {
     const { onGuildCooldownError, onAnyCooldownError } = command.hooks;
-    if (onGuildCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onGuildCooldownError(message, { totalCooldown, timeLeft });
-    } else if (onAnyCooldownError != null) {
-      const { totalCooldown, timeLeft } = err;
-      onAnyCooldownError(message, { totalCooldown, timeLeft });
-    }
+    __handleCooldownError(message, err, onGuildCooldownError, onAnyCooldownError);
   } else {
     throw err;
   }
 }
+
 
 class Command {
   constructor(runFunction, metadata, hooks, options) {
