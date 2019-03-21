@@ -11,6 +11,7 @@ function __validateMetadata(metadata) {
     aliases,
     description = '',
     adminOnly = false,
+    adminExemptFromCooldown = true,
     userCooldown = 0,
     channelCooldown = 0,
     guildCooldown = 0,
@@ -35,6 +36,9 @@ function __validateMetadata(metadata) {
   if (typeof adminOnly !== 'boolean') {
     throw new TypeError('Must specify adminOnly using a boolean.');
   }
+  if (typeof adminExemptFromCooldown !== 'boolean') {
+    throw new TypeError('Must specify adminExemptFromCooldown using a boolean.');
+  }
   if (typeof userCooldown !== 'number') {
     throw new TypeError('User Cooldown must be a number (in seconds).');
   }
@@ -58,6 +62,7 @@ function __validateMetadata(metadata) {
     aliases,
     description,
     adminOnly,
+    adminExemptFromCooldown,
     userCooldown,
     channelCooldown,
     guildCooldown,
@@ -152,8 +157,15 @@ class Command {
     this.metadata = __validateMetadata(metadata);
     this.hooks = __validateHooks(hooks);
     this.options = __validateOptions(options);
-    const { userCooldown, channelCooldown, guildCooldown } = this.metadata;
-    this.runFunction = Cooldowns.decorateWithAllCooldowns(
+
+    const {
+      userCooldown,
+      channelCooldown,
+      guildCooldown,
+      adminExemptFromCooldown,
+    } = this.metadata;
+    this.cooldowns = new Cooldowns(this.options.adminIDs, adminExemptFromCooldown);
+    this.runFunction = this.cooldowns.decorateWithAllCooldowns(
       runFunction,
       { userCooldown, channelCooldown, guildCooldown },
     );

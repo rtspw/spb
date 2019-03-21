@@ -5,7 +5,11 @@ const ChannelCooldownError = require('./errors/channel-cooldown-error');
 const GuildCooldownError = require('./errors/guild-cooldown-error');
 
 
-const Cooldowns = {
+class Cooldowns {
+  constructor(adminIDs = [], adminsExceptFromCooldown = true) {
+    this.adminIDs = adminIDs;
+    this.adminsExceptFromCooldown = adminsExceptFromCooldown;
+  }
 
   /**
    * Returns a function that limits function calls
@@ -16,22 +20,26 @@ const Cooldowns = {
   decorateWithCooldowns(fn, cooldown = 0, CooldownErrorConstructor, getIDCallback) {
     if (cooldown == null || cooldown <= 0) return fn;
 
+    const exemptIDs = this.adminsExceptFromCooldown ? this.adminIDs : [];
     const cooldowns = {};
+
     return async function runWithCooldowns(message, ...args) {
-      const id = getIDCallback(message);
-      const cooldownInMs = cooldown * 1000;
+      if (!exemptIDs.includes(message.author.id)) {
+        const id = getIDCallback(message);
+        const cooldownInMs = cooldown * 1000;
 
-      if (cooldowns[id] != null) {
-        const calltime = cooldowns[id];
-        const elapsedTime = Date.now() - calltime;
-        const remainingTime = cooldownInMs - elapsedTime;
-        throw new CooldownErrorConstructor(cooldown, remainingTime);
+        if (cooldowns[id] != null) {
+          const calltime = cooldowns[id];
+          const elapsedTime = Date.now() - calltime;
+          const remainingTime = cooldownInMs - elapsedTime;
+          throw new CooldownErrorConstructor(cooldown, remainingTime);
+        }
+
+        cooldowns[id] = Date.now();
+        setTimeout(() => {
+          delete cooldowns[id];
+        }, cooldownInMs);
       }
-
-      cooldowns[id] = Date.now();
-      setTimeout(() => {
-        delete cooldowns[id];
-      }, cooldownInMs);
 
       try {
         await fn(message, ...args);
@@ -39,7 +47,7 @@ const Cooldowns = {
         throw err;
       }
     };
-  },
+  }
 
   /**
    * Returns a function decorated with all existing cooldowns
@@ -66,7 +74,7 @@ const Cooldowns = {
       message => message.channel.guild.id,
     );
     return fnWithGuildCooldowns;
-  },
-};
+  }
+}
 
 module.exports = Cooldowns;
